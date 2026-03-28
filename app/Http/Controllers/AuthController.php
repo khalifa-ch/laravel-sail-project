@@ -21,7 +21,7 @@ class AuthController extends Controller
             'email'    => $request->email,
             'password' => Hash::make($request->password),
         ]);
-
+        $user->assignRole('client'); // Par défaut, le nouvel utilisateur est un client
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -56,5 +56,10 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()->delete();
 
         return response()->json(['message' => 'Logged out']);
+    }
+
+    public function me(Request $request)
+    {
+        return response()->json($request->user());
     }
 }
