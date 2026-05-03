@@ -19,5 +19,14 @@ class AdminSeeder extends Seeder
         );
 
         $user->assignRole('admin');
+
+        $user = User::firstOrCreate(
+            ['email' => 'agent@gmail.com'],
+            [
+                'name'     => 'Agent',
+                'password' => Hash::make('password123'),
+            ]
+        );  
+        $user->assignRole('agent');
     }
 }

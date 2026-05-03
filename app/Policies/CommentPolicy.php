@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Comment;
 use App\Models\User;
+use App\Models\Ticket;
 
 class CommentPolicy
 {
@@ -44,10 +45,16 @@ class CommentPolicy
      * Agent doit commenter ses tickets assignés (non-closed)
      * Admin peut commenter n'importe quel ticket
      */
-    public function create(User $user): bool
-    {
-        return $user->hasRole(['admin', 'agent', 'client']);
-    }
+        public function create(User $user, Ticket $ticket): bool
+        {
+            if ($ticket->status === 'closed') {
+                return false;
+            }
+
+            return $user->id === $ticket->client_id
+                || $user->id === $ticket->assigned_agent_id
+                || $user->hasRole('admin');
+        }
 
     /**
      * Modifier un commentaire.

@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreTicketRequest;
+use App\Http\Requests\UpdateTicketRequest;
+use App\Http\Resources\TicketResource;
 use App\Models\Ticket;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-
 
 class TicketController extends Controller
 {
@@ -33,7 +35,7 @@ class TicketController extends Controller
 
         $tickets = $query->paginate(15);
 
-        return response()->json($tickets);
+        return response()->json(TicketResource::collection($tickets));
     }
 
     /**
@@ -45,46 +47,36 @@ class TicketController extends Controller
 
         $ticket->load('client', 'agent', 'comments.user');
 
-        return response()->json($ticket);
+        return response()->json(TicketResource::make($ticket));
     }
 
     /**
      * Create ticket (clients only).
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreTicketRequest $request): JsonResponse
     {
         $this->authorize('create', Ticket::class);
 
-        $data = $request->validate([
-            'title'       => 'required|string|max:255',
-            'description' => 'required|string',
-            'priority'    => 'in:low,medium,high',
+        $ticket = Ticket::create([
+            ...$request->validated(),
+            'status'    => 'open',
+            'client_id' => $request->user()->id,
         ]);
 
-       $ticket = Ticket::create([
-        ...$data,
-        'status'    => 'open',
-        'client_id' => $request->user()->id,
-]);
-        return response()->json($ticket, 201);
+        return response()->json(TicketResource::make($ticket), 201);
     }
 
     /**
      * Update ticket (title/description).
      * Admin=all, Client=own+open only
      */
-    public function update(Request $request, Ticket $ticket): JsonResponse
+    public function update(UpdateTicketRequest $request, Ticket $ticket): JsonResponse
     {
         $this->authorize('update', $ticket);
 
-        $data = $request->validate([
-            'title'       => 'sometimes|string|max:255',
-            'description' => 'sometimes|string',
-        ]);
+        $ticket->update($request->validated());
 
-        $ticket->update($data);
-
-        return response()->json($ticket);
+        return response()->json(TicketResource::make($ticket));
     }
 
     /**
@@ -108,7 +100,7 @@ class TicketController extends Controller
 
         $ticket->update(['status' => $data['status']]);
 
-        return response()->json($ticket);
+        return response()->json(TicketResource::make($ticket));
     }
 
     /**
@@ -124,7 +116,7 @@ class TicketController extends Controller
 
         $ticket->update(['priority' => $data['priority']]);
 
-        return response()->json($ticket);
+        return response()->json(TicketResource::make($ticket));
     }
 
     /**
@@ -140,7 +132,7 @@ class TicketController extends Controller
 
         $ticket->update(['assigned_agent_id' => $data['assigned_agent_id']]);
 
-        return response()->json($ticket);
+        return response()->json(TicketResource::make($ticket));
     }
 
     /**
@@ -152,7 +144,7 @@ class TicketController extends Controller
 
         $ticket->update(['status' => 'open']);
 
-        return response()->json($ticket);
+        return response()->json(TicketResource::make($ticket));
     }
 
     /**
