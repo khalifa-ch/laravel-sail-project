@@ -6,6 +6,7 @@ use App\Http\Requests\StoreTicketRequest;
 use App\Http\Requests\UpdateTicketRequest;
 use App\Http\Resources\TicketResource;
 use App\Models\Ticket;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -121,7 +122,14 @@ class TicketController extends Controller
         $this->authorize('assignAgent', $ticket);
 
         $data = $request->validate([
-            'assigned_agent_id' => 'required|exists:users,id|numeric',
+            'assigned_agent_id' => [
+                'bail', 'required', 'integer',
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    if (! User::role('agent')->whereKey($value)->exists()) {
+                        $fail('The selected user is not an agent.');
+                    }
+                },
+            ],
         ]);
 
         $ticket->update(['assigned_agent_id' => $data['assigned_agent_id']]);
