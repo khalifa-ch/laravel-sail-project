@@ -2,11 +2,13 @@
 
 namespace App\Filament\Resources\Tickets\Tables;
 
+use App\Filament\Resources\Tickets\Schemas\TicketForm;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
 class TicketsTable
@@ -18,14 +20,18 @@ class TicketsTable
                 TextColumn::make('title')
                     ->searchable(),
                 TextColumn::make('status')
-                    ->badge(),
+                    ->badge()
+                    ->color(fn (string $state): string => TicketForm::STATUS_COLORS[$state]),
                 TextColumn::make('priority')
-                    ->badge(),
+                    ->badge()
+                    ->color(fn (string $state): string => TicketForm::PRIORITY_COLORS[$state])
+                    ->sortable(),
                 TextColumn::make('client.name')
                     ->searchable(),
-                TextColumn::make('assigned_agent_id')
-                    ->numeric()
-                    ->sortable(),
+                TextColumn::make('agent.name')
+                    ->label('Agent')
+                    ->placeholder('Unassigned')
+                    ->searchable(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -36,7 +42,10 @@ class TicketsTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                SelectFilter::make('status')
+                    ->options(TicketForm::STATUSES),
+                SelectFilter::make('priority')
+                    ->options(TicketForm::PRIORITIES),
             ])
             ->recordActions([
                 ViewAction::make(),

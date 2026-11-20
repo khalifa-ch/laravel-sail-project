@@ -15,14 +15,16 @@ class TicketInfolist
                 TextEntry::make('description')
                     ->columnSpanFull(),
                 TextEntry::make('status')
-                    ->badge(),
+                    ->badge()
+                    ->color(fn (string $state): string => TicketForm::STATUS_COLORS[$state]),
                 TextEntry::make('priority')
-                    ->badge(),
+                    ->badge()
+                    ->color(fn (string $state): string => TicketForm::PRIORITY_COLORS[$state]),
                 TextEntry::make('client.name')
                     ->label('Client'),
-                TextEntry::make('assigned_agent_id')
-                    ->numeric()
-                    ->placeholder('-'),
+                TextEntry::make('agent.name')
+                    ->label('Agent')
+                    ->placeholder('Unassigned'),
                 TextEntry::make('created_at')
                     ->dateTime()
                     ->placeholder('-'),
