@@ -17,7 +17,8 @@ class CommentController extends Controller
      */
     public function index(Ticket $ticket): JsonResponse
     {
-        $this->authorize('viewAny', Comment::class);
+        // Seeing a ticket's comments requires being able to see the ticket
+        $this->authorize('view', $ticket);
 
         $comments = $ticket->comments()->with('user')->paginate(20);
 
