@@ -9,19 +9,22 @@ use App\Models\Comment;
 use App\Models\Ticket;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class CommentController extends Controller
 {
     /**
      * List all comments for a ticket.
      */
-    public function index(Ticket $ticket): JsonResponse
+    public function index(Ticket $ticket): AnonymousResourceCollection
     {
-        $this->authorize('viewAny', Comment::class);
+        // Seeing a ticket's comments requires being able to see the ticket
+        $this->authorize('view', $ticket);
 
         $comments = $ticket->comments()->with('user')->paginate(20);
 
-        return response()->json(CommentResource::collection($comments));
+        // Returned directly (not via response()->json) so Laravel adds the pagination meta and links
+        return CommentResource::collection($comments);
     }
 
     /**
