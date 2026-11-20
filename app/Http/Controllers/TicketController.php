@@ -9,6 +9,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class TicketController extends Controller
 {
@@ -16,7 +17,7 @@ class TicketController extends Controller
      * List tickets (filtered by role).
      * Admin=all, Agent=assigned, Client=own
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', Ticket::class);
 
@@ -36,7 +37,8 @@ class TicketController extends Controller
 
         $tickets = $query->paginate(15);
 
-        return response()->json(TicketResource::collection($tickets));
+        // Returned directly (not via response()->json) so Laravel adds the pagination meta and links
+        return TicketResource::collection($tickets);
     }
 
     /**
