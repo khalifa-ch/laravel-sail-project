@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Ticket;
 use App\Models\User;
+use Illuminate\Auth\Access\Response;
 
 class TicketPolicy
 {
@@ -43,13 +44,22 @@ class TicketPolicy
         return $user->hasRole('client') && $ticket->client_id === $user->id && $ticket->status === 'open';
     }
 
-    // updateStatus: admin=all tickets, agent=assigned tickets (cannot reopen)
-    public function updateStatus(User $user, Ticket $ticket): bool
+    // updateStatus: admin=any change, agent=assigned tickets, forward only (open → in_progress → closed)
+    public function updateStatus(User $user, Ticket $ticket, string $newStatus): Response
     {
         if ($user->hasRole('admin')) {
-            return true;
+            return Response::allow();
         }
-        return $user->hasRole('agent') && $ticket->assigned_agent_id === $user->id;
+
+        if (! $user->hasRole('agent') || $ticket->assigned_agent_id !== $user->id) {
+            return Response::deny();
+        }
+
+        $order = ['open' => 0, 'in_progress' => 1, 'closed' => 2];
+
+        return $order[$newStatus] > $order[$ticket->status]
+            ? Response::allow()
+            : Response::deny('Agents can only move tickets forward.');
     }
 
     // updatePriority: admin only

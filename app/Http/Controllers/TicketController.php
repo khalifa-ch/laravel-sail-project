@@ -85,18 +85,12 @@ class TicketController extends Controller
      */
     public function changeStatus(Request $request, Ticket $ticket): JsonResponse
     {
-        $this->authorize('updateStatus', $ticket);
-
+        // Validate first: the policy needs a valid target status to decide
         $data = $request->validate([
             'status' => 'required|in:open,in_progress,closed',
         ]);
 
-        // Agent cannot reopen (can only progress forward: open→in_progress→closed)
-        if ($request->user()->hasRole('agent')) {
-            if ($data['status'] === 'open') {
-                return response()->json(['error' => 'Agents cannot reopen tickets.'], 403);
-            }
-        }
+        $this->authorize('updateStatus', [$ticket, $data['status']]);
 
         $ticket->update(['status' => $data['status']]);
 
