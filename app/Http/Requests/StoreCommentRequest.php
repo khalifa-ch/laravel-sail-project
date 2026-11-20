@@ -14,8 +14,7 @@ class StoreCommentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'ticket_id' => 'required|exists:tickets,id|numeric',
-            'content'   => 'required|string',
+            'content' => 'required|string',
         ];
     }
 }

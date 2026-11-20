@@ -45,4 +45,16 @@ class CommentAuthorizationTest extends TestCase
 
         $this->getJson("/api/tickets/{$ticket->id}/comments")->assertOk();
     }
+
+    public function test_client_can_comment_on_own_ticket_without_sending_ticket_id(): void
+    {
+        $owner  = User::factory()->create()->assignRole('client');
+        $ticket = Ticket::factory()->for($owner, 'client')->create();
+
+        Sanctum::actingAs($owner);
+
+        $this->postJson("/api/tickets/{$ticket->id}/comments", ['content' => 'Bonjour'])
+            ->assertCreated()
+            ->assertJsonPath('ticket_id', $ticket->id);
+    }
 }
