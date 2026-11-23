@@ -21,21 +21,9 @@ class TicketController extends Controller
     {
         $this->authorize('viewAny', Ticket::class);
 
-        $user = $request->user();
-        $query = Ticket::with('client', 'agent', 'comments');
-
-        if ($user->hasRole('admin')) {
-            // Admin sees all tickets
-            $query = $query;
-        } elseif ($user->hasRole('agent')) {
-            // Agent sees only assigned tickets
-            $query = $query->where('assigned_agent_id', $user->id);
-        } elseif ($user->hasRole('client')) {
-            // Client sees only own tickets
-            $query = $query->where('client_id', $user->id);
-        }
-
-        $tickets = $query->paginate(15);
+        $tickets = Ticket::visibleTo($request->user())
+            ->with('client', 'agent', 'comments')
+            ->paginate(15);
 
         // Returned directly (not via response()->json) so Laravel adds the pagination meta and links
         return TicketResource::collection($tickets);
