@@ -2,20 +2,17 @@
 
 namespace App\Filament\Resources\Tickets\RelationManagers;
 
-use Filament\Actions\AssociateAction;
-use Filament\Actions\BulkActionGroup;
+use App\Models\Comment;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\DissociateAction;
-use Filament\Actions\DissociateBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Auth\Access\Response;
+use Illuminate\Support\Facades\Gate;
 
 class CommentsRelationManager extends RelationManager
 {
@@ -25,9 +22,6 @@ class CommentsRelationManager extends RelationManager
     {
         return $schema
             ->components([
-                Select::make('user_id')
-                    ->relationship('user', 'name')
-                    ->required(),
                 Textarea::make('content')
                     ->required()
                     ->columnSpanFull(),
@@ -38,35 +32,37 @@ class CommentsRelationManager extends RelationManager
     {
         return $table
             ->recordTitleAttribute('content')
+            ->defaultSort('created_at')
             ->columns([
                 TextColumn::make('user.name')
+                    ->label('Author'),
+                TextColumn::make('content')
+                    ->wrap()
                     ->searchable(),
                 TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-            ])
-            ->filters([
-                //
+                    ->since()
+                    ->sortable(),
             ])
             ->headerActions([
-                CreateAction::make(),
-                AssociateAction::make(),
+                CreateAction::make()
+                    // The author is always the logged-in user, never a form field
+                    ->mutateDataUsing(fn (array $data): array => [...$data, 'user_id' => auth()->id()]),
             ])
             ->recordActions([
                 EditAction::make(),
-                DissociateAction::make(),
                 DeleteAction::make(),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DissociateBulkAction::make(),
-                    DeleteBulkAction::make(),
-                ]),
             ]);
+    }
+
+    // Agents only have the View page, so comments must stay writable there (CommentPolicy still decides)
+    public function isReadOnly(): bool
+    {
+        return false;
+    }
+
+    // CommentPolicy::create needs the ticket (closed? own ticket?), which Filament does not pass by default
+    protected function getCreateAuthorizationResponse(): Response
+    {
+        return Gate::inspect('create', [Comment::class, $this->getOwnerRecord()]);
     }
 }
