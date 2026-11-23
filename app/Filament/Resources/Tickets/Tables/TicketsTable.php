@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Tickets\Tables;
 
+use App\Filament\Resources\Tickets\Actions\ChangeStatusAction;
 use App\Filament\Resources\Tickets\Schemas\TicketForm;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -49,6 +50,7 @@ class TicketsTable
             ])
             ->recordActions([
                 ViewAction::make(),
+                ChangeStatusAction::make(),
                 EditAction::make(),
             ])
             ->toolbarActions([
